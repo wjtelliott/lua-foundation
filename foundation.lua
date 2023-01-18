@@ -7,6 +7,15 @@ local endAction = function(callback)
   end
 end
 
+local endActionResult = function(callback)
+  return function(...)
+    local extraArgs = {...}
+    return function(arg)
+      return callback(arg, table.unpack(extraArgs))
+    end
+  end
+end
+
 local debugLog = endAction(
   function(arg, str)
     if arg.fNoLogs then return end
@@ -21,6 +30,7 @@ local pipe = function(...)
     for _, f in pairs(actions) do
       local actionResult = f(arg)
       if actionResult == pipeEnd then return actionResult end
+      if actionResult == pipeNest then return end
       if type(actionResult) == 'table' then
         if pipe(table.unpack(actionResult))(arg) == pipeEnd then return pipeEnd end
       end
@@ -96,6 +106,7 @@ local some = function(actions)
       local funcResult = f(arg)
       if type(funcResult) == 'table' then
         if pipe(table.unpack(funcResult))(arg) == pipeEnd then return pipeEnd end
+        return
       end
     end
   end
@@ -236,15 +247,21 @@ local breakLoop = endAction(
   end
 )
 
-local breakPipe =  function()
+local breakPipe = function()
   return function(arg)
     return pipeEnd
   end
 end
 
+local breakNest = function()
+  return function(arg)
+    return pipeNest
+  end
+end
+
 local compiled = {
   -- index
-  'pipe conditional endAction ifThe ifNotThe ifTheElse some switch loopWhile compose debugLog sanity randomConditional sanityTrue sanityFalse wait forLoop stopLoopAt startLoopAt iterateCounter breakLoop breakPipe',
+  'pipe conditional endAction ifThe ifNotThe ifTheElse some switch loopWhile compose debugLog sanity randomConditional sanityTrue sanityFalse wait forLoop stopLoopAt startLoopAt iterateCounter breakLoop breakPipe breakNest endActionResult',
   -- core
   pipe,
   conditional,
@@ -263,12 +280,17 @@ local compiled = {
   sanityTrue,
   sanityFalse,
   wait,
+  -- loop stuff
   forLoop,
   stopLoopAt,
   startLoopAt,
   iterateCounter,
+  -- breaks
   breakLoop,
-  breakPipe
+  breakPipe,
+  breakNest,
+  -- misc
+  endActionResult
 }
 
 -- set up const protection
@@ -310,6 +332,7 @@ end
 foundationAdd(compiled)
 const('foundationAdd')
 const('pipeEnd', '$PIPE_END')
+const('pipeNest', '$PIPE_NEST')
 
 -- test message and display version
 local displayVersion = endAction(
