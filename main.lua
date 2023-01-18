@@ -10,7 +10,7 @@ local exampleData = {
   likesToCode = true
 }
 
-local oneoff = {
+local customs = {
   printLoopCounter = endAction( function(arg) print(arg.loopData.counter) end ),
   loopNeedsToBreak = conditional(
     function(arg)
@@ -26,11 +26,11 @@ local oneoff = {
 pipe(
 
   forLoop(startLoopAt(0))
-  (stopLoopAt(500))
+  (stopLoopAt(50))
   (iterateCounter(1))(
-    oneoff.printLoopCounter(),
+    customs.printLoopCounter(),
     wait(0.25),
-    ifThe(oneoff.loopNeedsToBreak())(
+    ifThe(customs.loopNeedsToBreak())(
       debugLog('Counter is 6 or greater, breaking loop now'),
       breakLoop()
     )
